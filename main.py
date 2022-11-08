@@ -2,7 +2,7 @@ import hashlib
 import audio_metadata as am
 import pathlib
 import os
-
+import json
 
 
 def hash_gen(x: str) -> str:										# generate sha256sum
@@ -17,9 +17,14 @@ def metadata_extract(x: str) -> dict:
 	metadata = am.load(x)											# loading metadata
 	tag_dict = {}
 	for i in metadata.tags:
-		tags = eval(f'metadata.tags.{i}')
-		tag_dict[i] = tags[0]
-
+		if ' ' in i:
+			print(f"{x} | {i} | Contains Whitespace")
+		else:
+			tags = eval(f'metadata.tags.{i}')
+			tag_dict[i] = tags[0]
+	
+	tag_dict['sha256sum'] = hash_gen(x)
+	
 	return tag_dict
 	
 
@@ -51,3 +56,34 @@ def mkdir() -> None:												# create directories
 	os.chdir(init_dir)
 	return None
 
+
+def create_json() -> None:
+	with open("tempStorage.json", "w") as f:
+		data = {"tags": []}
+		json.dump(data, f, indent=4)
+	
+	return None
+
+
+def read_json(jsonFile="tempStorage.json") -> dict:
+	with open(jsonFile, "r") as f:
+		f_load = json.load(f)
+		return f_load
+
+
+def write_json(file) -> None:
+	try:
+		with open("tempStorage.json", 'r') as file1:
+			f_read = json.load(file1)
+		with open("tempStorage.json", "w") as f:
+			json.dump(append_dict(f_read, metadata_extract(file)), f, indent=4)
+	except FileNotFoundError:
+		create_json()
+	
+	return None
+
+
+def append_dict(prevData, newData) -> dict:
+	prev_keys = prevData["tags"]
+	prev_keys.append(newData)
+	return prevData
