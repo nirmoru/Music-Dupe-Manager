@@ -16,13 +16,14 @@ def hash_gen(x: str) -> str:										# generate sha256sum
 def metadata_extract(x: str) -> dict:
 	metadata = am.load(x)											# loading metadata
 	tag_dict = {}
-	for i in metadata.tags:
-		if ' ' in i:
-			print(f"{x} | {i} | Contains Whitespace")
-		else:
-			tags = eval(f'metadata.tags.{i}')
-			tag_dict[i] = tags[0]
-	
+	tag_list = ['tracknumber', 'artist', 'title', 'album', 'date', 'genre', 'albumartist', ]
+	for tag in tag_list:
+		try:
+			tags = eval(f'metadata.tags.{tag}')
+			tag_dict[tag.capitalize()] = tags[0]
+		except AttributeError:
+			print(f"{tag} doesn't exist")
+		
 	tag_dict['sha256sum'] = hash_gen(x)
 	
 	return tag_dict
@@ -30,7 +31,7 @@ def metadata_extract(x: str) -> dict:
 
 def list_files(directory: str) -> list:								# create list of files
 	file_list = []
-	for file in pathlib.Path(directory).glob('**/*'):
+	for file in pathlib.Path(directory).glob('**/*.mp3'):
 		if file.is_file():
 			file_list.append(file.absolute())
 	
@@ -65,8 +66,8 @@ def create_json() -> None:
 	return None
 
 
-def read_json(jsonFile="tempStorage.json") -> dict:
-	with open(jsonFile, "r") as f:
+def read_json(jsonfile="tempStorage.json") -> dict:
+	with open(jsonfile, "r") as f:
 		f_load = json.load(f)
 		return f_load
 
@@ -83,7 +84,7 @@ def write_json(file) -> None:
 	return None
 
 
-def append_dict(prevData, newData) -> dict:
-	prev_keys = prevData["tags"]
-	prev_keys.append(newData)
-	return prevData
+def append_dict(prev_data, new_data) -> dict:
+	prev_keys = prev_data["tags"]
+	prev_keys.append(new_data)
+	return prev_data
