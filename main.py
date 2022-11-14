@@ -3,6 +3,7 @@ import audio_metadata as am
 import pathlib
 import os
 import json
+import re
 
 
 def hash_gen(x: str) -> str:										# generate sha256sum
@@ -13,16 +14,37 @@ def hash_gen(x: str) -> str:										# generate sha256sum
 		return sha255_hash.hexdigest()
 
 
-def metadata_extract(x: str) -> dict:
-	metadata = am.load(x)											# loading metadata
+def metadata_extract(x: str) -> dict:											# loading metadata
+	metadata = am.load(x)
 	tag_dict = {}
-	tag_list = ['tracknumber', 'artist', 'title', 'album', 'date', 'genre', 'albumartist', ]
+	ext_regex = r'(mp3|flac|aiff|wav|ogg|opus)'
+	if os.name == 'posix':
+		file_name = x.split('/')[-1]
+		ext = re.findall(ext_regex, file_name)[0]
+	elif os.name == 'nt':
+		file_name = x.split('\\')[-1]
+		ext = re.findall(ext_regex,file_name)[0]
+	else:
+		print("Comment out line from 19 to 29")
+	tag_dict['File Name'] = file_name
+	tag_dict['extension'] = ext
+	tag_list = ['tracknumber', 'artist', 'title', 'album', 'date', 'genre', 'albumartist']
 	for tag in tag_list:
 		try:
 			tags = eval(f'metadata.tags.{tag}')
-			tag_dict[tag.capitalize()] = tags[0]
+			if tag == "date":
+				regex = r"\d{4}"
+				match = re.findall(regex, tags[0])
+				try:
+					tag_dict[tag.capitalize()] = match[0]
+				except IndexError:
+					tag_dict[tag.capitalize()] = tags[0]
+			else:
+				tag_dict[tag.capitalize()] = tags[0]
 		except AttributeError:
-			print(f"{tag} doesn't exist")
+			error = f"{tag} doesn't exist for {x}"
+			print(error)
+			store_logs(error)
 		
 	tag_dict['sha256sum'] = hash_gen(x)
 	
@@ -88,3 +110,22 @@ def append_dict(prev_data, new_data) -> dict:
 	prev_keys = prev_data["tags"]
 	prev_keys.append(new_data)
 	return prev_data
+
+
+def store_logs(logs, logfile='tempfile.txt'):
+	try:
+		with open(logfile, 'a') as f:
+			f.write(f'{logs}\n')
+	except FileNotFoundError:
+		with open(logfile, 'w') as f:
+			f.write(f'{logs}\n')
+
+	return None
+
+
+def export_metadata(directory) -> None:
+	files_list = list_files(directory)
+	for i in files_list:
+		write_json(i)
+	
+	return None
