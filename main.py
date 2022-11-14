@@ -20,10 +20,16 @@ def metadata_extract(x: str) -> dict:											# loading metadata
 	ext_regex = r'(mp3|flac|aiff|wav|ogg|opus)'
 	if os.name == 'posix':
 		file_name = x.split('/')[-1]
-		ext = re.findall(ext_regex, file_name)[0]
+		try:
+			ext = re.findall(ext_regex, file_name)[0]
+		except IndexError:
+			ext = "Invalid extension"
 	elif os.name == 'nt':
 		file_name = x.split('\\')[-1]
-		ext = re.findall(ext_regex,file_name)[0]
+		try:
+			ext = re.findall(ext_regex, file_name)[0]
+		except IndexError:
+			ext = "Invalid extension"
 	else:
 		print("Comment out line from 19 to 29")
 	tag_dict['File Name'] = file_name
